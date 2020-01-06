@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    open-in-view: false
+
+api:
+  base-url: https://udiportal.mfds.go.kr
+auth-service-url: ${api.base-url}/api/oauth/token
+
+oauth:
+  client-id: blahblah
+  secret: blahblah
+logging:
+  level:
+    org.springframework.web: debug
