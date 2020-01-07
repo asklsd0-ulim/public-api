@@ -55,22 +55,22 @@
 
 <script type="text/template" id="udi-di-codes-template">
     <div>
-    <button class="btn btn-primary" id="add-udi-code-button">UDI 코드 추가</button>
-    <table class="table">
-        <thead>
-        <tr>
-            <th>UDI-DI 일련번호</th>
-            <th>모델일련번호</th>
-            <th>코드구분</th>
-            <th>UDI-DI 코드</th>
-            <th>포장 내 수량</th>
-            <th>통합정보 등록 여부</th>
-            <th>통합정보 등록 완료일</th>
-        </tr>
-        </thead>
-        <tbody id="udi-di-code-list">
-        </tbody>
-    </table>
+        <button class="btn btn-primary" id="add-udi-code-button">UDI 코드 추가</button>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>UDI-DI 일련번호</th>
+                <th>모델일련번호</th>
+                <th>코드구분</th>
+                <th>UDI-DI 코드</th>
+                <th>포장 내 수량</th>
+                <th>통합정보 등록 여부</th>
+                <th>통합정보 등록 완료일</th>
+            </tr>
+            </thead>
+            <tbody id="udi-di-code-list">
+            </tbody>
+        </table>
     </div>
 </script>
 <script type="text/template" id="udi-di-codes-row-template">
@@ -87,25 +87,25 @@
     </tr>
 </script>
 <script type="text/template" id="add-udi-form-template">
-<form method="post" th:action="@{/udi}" id="add-udi-code-form">
-    <input type="hidden" name="meddevItemSeq" value="${meddevItemSeq}"/>
-    <input type="hidden" name="mebTypeName" value="${modelName}"/>
-    <input type="hidden" name="isForExport" value="${isForExport}"/>
-    <input type="hidden" name="cobFlagCode" value="${cobFlagCode}"/>
-    <div class="form-group">
-        <label for="add-form-code-system">코드체계</label>
-        <select id="add-form-code-system" name="codeSystem" class="form-control">
-            <option value="GS1">GS1</option>
-            <option value="HIBICC">HIBICC</option>
-            <option value="ICCBBA">ICCBBA</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="add-form-code">UDI 코드</label>
-        <input type="text" class="form-control" name="udiDiCode" id="add-form-code">
-    </div>
-    <button type="submit" class="btn btn-primary">Submit</button>
-</form>
+    <form method="post" th:action="@{/udi}" id="add-udi-code-form">
+        <input type="hidden" name="meddevItemSeq" value="${meddevItemSeq}"/>
+        <input type="hidden" name="mebTypeName" value="${modelName}"/>
+        <input type="hidden" name="isForExport" value="${isForExport}"/>
+        <input type="hidden" name="cobFlagCode" value="${cobFlagCode}"/>
+        <div class="form-group">
+            <label for="add-form-code-system">코드체계</label>
+            <select id="add-form-code-system" name="codeSystem" class="form-control">
+                <option value="GS1">GS1</option>
+                <option value="HIBICC">HIBICC</option>
+                <option value="ICCBBA">ICCBBA</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="add-form-code">UDI 코드</label>
+            <input type="text" class="form-control" name="udiDiCode" id="add-form-code">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
 </script>
 
 <!-- Modal -->
@@ -122,22 +122,23 @@
 </div>
 <script type="text/javascript" th:inline="javascript" th:if="${models}">
     /*<![CDATA[*/
-    (function() {
-        $.fn.serializeObject = function() {
+    (function () {
+        $.fn.serializeObject = function () {
             var obj = null;
             try {
-                if(this[0].tagName && this[0].tagName.toUpperCase() === "FORM" ) {
+                if (this[0].tagName && this[0].tagName.toUpperCase() === "FORM") {
                     var arr = this.serializeArray();
-                    if(arr){
+                    if (arr) {
                         obj = {};
-                        $.each(arr, function() {
+                        $.each(arr, function () {
                             obj[this.name] = this.value;
                         });
                     }
                 }
-            }catch(e) {
+            } catch (e) {
                 console.error(e);
-            }finally {}
+            } finally {
+            }
             return obj;
         };
 
@@ -154,22 +155,25 @@
             return result;
         }
 
-        function fetchUdiDiCodes(model, onFetchSuccess) {
-            $.ajax({
-                url: '/udi',
-                method: 'GET',
-                data: {
-                    'meddevItemSeq': model.meddevItemSeq,
-                    'mebTypeName': model.modelName,
-                    'isForExport': model.isForExport
-                },
-                success: function (udiDis) {
-                    console.log(udiDis);
-                    onFetchSuccess.apply(null, [udiDis]);
-                },
-                error: function (err) {
-                    console.error(err);
-                }
+        function fetchUdiDiCodes(model) {
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: '/udi',
+                    method: 'GET',
+                    data: {
+                        'meddevItemSeq': model.meddevItemSeq,
+                        'mebTypeName': model.modelName,
+                        'isForExport': model.isForExport
+                    },
+                    success: function (udiDis) {
+                        console.log(udiDis);
+                        resolve(udiDis);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        reject(err);
+                    }
+                });
             });
         }
 
@@ -198,53 +202,55 @@
             console.log(udiDi);
         }
 
-        function checkCodeDuplicated(code, onPassed, onDuplicated) {
-            $.ajax({
-                url: '/udi/code',
-                data: code,
-                success: function(dup) {
-                    if (dup) {
-                        onDuplicated.apply(null, [dup]);
-                        return;
+        function checkCodeDuplicated(code) {
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: '/udi/code',
+                    data: code,
+                    success: function (dup) {
+                        if (dup) {
+                            var message = 'UDI 코드가 ' + dup.mebTypeName + '과 중복됨';
+                            reject(message);
+                            return;
+                        }
+                        resolve(code);
                     }
-                    onPassed.apply(null);
-                }
-            })
+                })
+            });
         }
 
         function registerUdiDiCode(data, callback) {
-            $.ajax({
-                url: '/udi',
-                method: 'POST',
-                dataType: 'json',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                success: function() {
-                    callback.apply(null);
-                },
-                error: function(e) {
-                    console.error(e);
-                    alert(e.responseJSON.message);
-                }
-            })
-
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: '/udi',
+                    method: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function () {
+                        resolve();
+                    },
+                    error: function (e) {
+                        console.error(e);
+                        reject(e.responseJSON.message);
+                    }
+                });
+            });
         }
 
         function renderAddUdiCodeForm(productInfo, $appendTo) {
             var $form = $(replaceTemplate(loadTemplate('add-udi-form-template'), productInfo));
-            $form.submit(function() {
+            $form.submit(function () {
                 var data = $(this).serializeObject();
                 console.log(data);
-                checkCodeDuplicated(data,
-                    function () {
-                        registerUdiDiCode(data, function() {
-                            alert('등록되었습니다');
-                        });
-                    },
-                    function (duplicated) {
-                        alert('UDI 코드가 ' + duplicated.mebTypeName + '과 중복됨')
-                    }
-                );
+                checkCodeDuplicated(data)
+                    .then(registerUdiDiCode)
+                    .then(function () {
+                        alert('등록되었습니다');
+                    })
+                    .catch(function (error) {
+                        alert(error);
+                    });
                 return false;
             });
             $appendTo.empty();
@@ -259,7 +265,7 @@
             var row = $(replaceTemplate(modelsTemplate, model));
             row.find('.type-name').click(function (e) {
                 e.preventDefault();
-                fetchUdiDiCodes(model, function (udiDis) {
+                fetchUdiDiCodes(model).then(function (udiDis) {
                     renderUdiDiCodes(udiDis, $('#udi-di-cont'),
                         function () {
                             var $popup = $('#exampleModal .modal-body');
