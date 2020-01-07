@@ -2,6 +2,8 @@ package gov.mfds.example.udi.ui;
 
 import gov.mfds.example.udi.client.UDIClient;
 import gov.mfds.example.udi.client.dto.*;
+import gov.mfds.example.udi.enums.CobFlagCode;
+import gov.mfds.example.udi.enums.DiCodeSystem;
 import gov.mfds.example.util.Paged;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +51,13 @@ public class UdiController {
     public ResponseEntity registerUdiDiCode(@RequestBody RegisterUdiDiCodeDTO dto, ModelMap modelMap) {
         Integer udiDiSeq = udiClient.registUdiDiCode(dto);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/udi/code")
+    public ResponseEntity<DuplicatedCodeDTO> checkDuplicateCode(@RequestParam("udiDiCode") String code,
+                                                                @RequestParam("codeSystem")DiCodeSystem codeSystem,
+                                                                @RequestParam("cobFlagCode")CobFlagCode cobFlagCode) {
+        return ResponseEntity.ok(udiClient.getUdiCode(code, codeSystem, cobFlagCode));
     }
 
     @PostMapping("/udi/delete")

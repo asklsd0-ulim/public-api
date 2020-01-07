@@ -1,10 +1,13 @@
 package gov.mfds.example.udi.client;
 
 import gov.mfds.example.udi.client.dto.*;
+import gov.mfds.example.udi.enums.CobFlagCode;
+import gov.mfds.example.udi.enums.DiCodeSystem;
 import gov.mfds.example.util.Paged;
 import gov.mfds.example.util.PublicApiRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -64,10 +67,25 @@ public class UDIClient {
     }
 
     public Integer registUdiDiCode(RegisterUdiDiCodeDTO registerUdiDiCodeDTO) {
-        String uri = "/api/v1/int-info/udidi-unity";
+        String uri = "/api/test/v1/int-info/udidi-unity";
         ResponseEntity<Integer> responseEntity = restTemplate.post(uri, registerUdiDiCodeDTO, Integer.class);
         Integer newUdiDiCodeKey = responseEntity.getBody();
         return newUdiDiCodeKey;
+    }
+
+    public DuplicatedCodeDTO getUdiCode(String udiCode, DiCodeSystem codeSystem, CobFlagCode cobFlagCode) {
+        String uri = "/api/v1/int-info/udidi-code";
+        MultiValueMap<String, Object> param = new LinkedMultiValueMap<>();
+        param.add("udiDiCode", udiCode);
+        param.add("codeSystem", codeSystem.name());
+        param.add("cobFlagCode", cobFlagCode.name());
+        ResponseEntity<DuplicatedCodeDTO> responseEntity =
+                restTemplate.get(uri, param, DuplicatedCodeDTO.class);
+        if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
+            return null;
+        }
+
+        return responseEntity.getBody();
     }
 
     public UdiDiDTO updateUnityinfo(Integer meddevItemSeq, Integer mebTypeSeq, Integer udiDiSeq,

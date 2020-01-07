@@ -34,6 +34,9 @@
 <div id="udi-di-cont">
 
 </div>
+<div id="udi-di-form-cont">
+
+</div>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
@@ -51,6 +54,8 @@
 </script>
 
 <script type="text/template" id="udi-di-codes-template">
+    <div>
+    <button class="btn btn-primary" id="add-udi-code-button">UDI 코드 추가</button>
     <table class="table">
         <thead>
         <tr>
@@ -66,6 +71,7 @@
         <tbody id="udi-di-code-list">
         </tbody>
     </table>
+    </div>
 </script>
 <script type="text/template" id="udi-di-codes-row-template">
     <tr>
@@ -80,9 +86,62 @@
         <td>${unityInfoRegistComptDate}</td>
     </tr>
 </script>
+<script type="text/template" id="add-udi-form-template">
+<form method="post" th:action="@{/udi}" id="add-udi-code-form">
+    <input type="hidden" name="meddevItemSeq" value="${meddevItemSeq}"/>
+    <input type="hidden" name="mebTypeName" value="${modelName}"/>
+    <input type="hidden" name="isForExport" value="${isForExport}"/>
+    <input type="hidden" name="cobFlagCode" value="${cobFlagCode}"/>
+    <div class="form-group">
+        <label for="add-form-code-system">코드체계</label>
+        <select id="add-form-code-system" name="codeSystem" class="form-control">
+            <option value="GS1">GS1</option>
+            <option value="HIBICC">HIBICC</option>
+            <option value="ICCBBA">ICCBBA</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="add-form-code">UDI 코드</label>
+        <input type="text" class="form-control" name="udiDiCode" id="add-form-code">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+</script>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script type="text/javascript" th:inline="javascript" th:if="${models}">
     /*<![CDATA[*/
     (function() {
+        $.fn.serializeObject = function() {
+            var obj = null;
+            try {
+                if(this[0].tagName && this[0].tagName.toUpperCase() === "FORM" ) {
+                    var arr = this.serializeArray();
+                    if(arr){
+                        obj = {};
+                        $.each(arr, function() {
+                            obj[this.name] = this.value;
+                        });
+                    }
+                }
+            }catch(e) {
+                console.error(e);
+            }finally {}
+            return obj;
+        };
+
+
         function loadTemplate(id) {
             return document.getElementById(id).innerHTML;
         }
@@ -114,12 +173,12 @@
             });
         }
 
-        function renderUdiDiCodes(udiDis, onUdiDiCodeClick) {
-            $('#udi-di-cont').empty();
+        function renderUdiDiCodes(udiDis, $appendTo, onAddCodeClick, onUdiDiCodeClick) {
+            $appendTo.empty();
             var $udiDiCodes = $(loadTemplate('udi-di-codes-template'));
             var tbody = $udiDiCodes.find('#udi-di-code-list');
-            $udiDiCodes.append(tbody);
-            $('#udi-di-cont').append($udiDiCodes);
+            $udiDiCodes.children('table').append(tbody);
+            $appendTo.append($udiDiCodes);
             var udiDiRowTemplate = loadTemplate('udi-di-codes-row-template');
             udiDis.items.forEach(function (udiDi) {
                 var udiDiRow = $(replaceTemplate(udiDiRowTemplate, udiDi));
@@ -129,6 +188,9 @@
                 });
                 tbody.append(udiDiRow);
             });
+            $udiDiCodes.find('#add-udi-code-button').click(function () {
+                onAddCodeClick.apply(null);
+            });
         }
 
         function renderUdiDiCodeForm(udiDi) {
@@ -136,6 +198,58 @@
             console.log(udiDi);
         }
 
+        function checkCodeDuplicated(code, onPassed, onDuplicated) {
+            $.ajax({
+                url: '/udi/code',
+                data: code,
+                success: function(dup) {
+                    if (dup) {
+                        onDuplicated.apply(null, [dup]);
+                        return;
+                    }
+                    onPassed.apply(null);
+                }
+            })
+        }
+
+        function registerUdiDiCode(data, callback) {
+            $.ajax({
+                url: '/udi',
+                method: 'POST',
+                dataType: 'json',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function() {
+                    callback.apply(null);
+                },
+                error: function(e) {
+                    console.error(e);
+                    alert(e.responseJSON.message);
+                }
+            })
+
+        }
+
+        function renderAddUdiCodeForm(productInfo, $appendTo) {
+            var $form = $(replaceTemplate(loadTemplate('add-udi-form-template'), productInfo));
+            $form.submit(function() {
+                var data = $(this).serializeObject();
+                console.log(data);
+                checkCodeDuplicated(data,
+                    function () {
+                        registerUdiDiCode(data, function() {
+                            alert('등록되었습니다');
+                        });
+                    },
+                    function (duplicated) {
+                        alert('UDI 코드가 ' + duplicated.mebTypeName + '과 중복됨')
+                    }
+                );
+                return false;
+            });
+            $appendTo.empty();
+            $appendTo.append($form);
+        }
 
         var models = /*[[${models.items}]]*/ [];
         var $models = $('#models');
@@ -143,10 +257,16 @@
 
         models.forEach(function (model) {
             var row = $(replaceTemplate(modelsTemplate, model));
-            row.find('.type-name').click(function(e) {
+            row.find('.type-name').click(function (e) {
                 e.preventDefault();
-                fetchUdiDiCodes(model, function(udiDis) {
-                    renderUdiDiCodes(udiDis, renderUdiDiCodeForm);
+                fetchUdiDiCodes(model, function (udiDis) {
+                    renderUdiDiCodes(udiDis, $('#udi-di-cont'),
+                        function () {
+                            var $popup = $('#exampleModal .modal-body');
+                            renderAddUdiCodeForm(model, $popup);
+                            $('#exampleModal').modal({show: true});
+                        },
+                        renderUdiDiCodeForm);
                 });
             });
             $models.append(row);
