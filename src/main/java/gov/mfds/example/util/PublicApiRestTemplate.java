@@ -82,14 +82,14 @@ public class PublicApiRestTemplate {
 
     public <P, R> ResponseEntity<R> post(String uri, P body, Class<R> returnType) {
         HttpHeaders headers = makeAuthorizationHeader();
-
+        String uriString = buildUri(uri, null);
         HttpEntity<P> httpEntity;
         if (body != null) {
             httpEntity = new HttpEntity<>(body, headers);
         } else {
             httpEntity = new HttpEntity<>(headers);
         }
-        ResponseEntity<R> responseEntity = restTemplate.exchange(uri, HttpMethod.POST, httpEntity, returnType);
+        ResponseEntity<R> responseEntity = restTemplate.exchange(uriString, HttpMethod.POST, httpEntity, returnType);
 
         return responseEntity;
     }
